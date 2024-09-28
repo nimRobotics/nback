@@ -146,7 +146,7 @@
         let lastStimulusTime = 0;
         let gameData = [];
         let gameStartTime;
-        const matchProbability = 0.60; // 50% chance of n-back match
+        const matchProbability = 0.50; // 50% chance of n-back match
         const gameDuration = 300000; // 5 minutes in milliseconds
         const persistenceTime = 900; // milliseconds
         const interStimulusInterval = 1000; // milliseconds
@@ -181,15 +181,23 @@
         }
 
         function showDot(cellIndex) {
+            // Clear any existing dots
             cells.forEach(dot => {
                 dot.style.transform = 'scale(0)';
             });
             
+            // Show the dot after the ISI
             setTimeout(() => {
                 cells[cellIndex].style.transform = 'scale(1)';
                 lastStimulusTime = Date.now();
-            }, 100);
+                
+                // Hide the dot after persistenceTime
+                setTimeout(() => {
+                    cells[cellIndex].style.transform = 'scale(0)';
+                }, persistenceTime);
+            }, interStimulusInterval);
         }
+
 
         function updateScore() {
             scoreElement.textContent = `Score: ${score}`;
@@ -255,7 +263,7 @@
             isGameRunning = true;
             gameStartTime = Date.now();
 
-            intervalId = setInterval(nextTurn, persistenceTime); // Show a new dot every persistenceTime seconds
+            intervalId = setInterval(nextTurn, persistenceTime + interStimulusInterval); // Show a new dot every persistenceTime seconds
             timerIntervalId = setInterval(updateTimer, 1000); // Update timer every second
         }
 
@@ -271,7 +279,7 @@
 
         function saveCSV() {
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Participant ID,N-back Level,Trial,ShouldRespond,Response,Response Time (ms),Elapsed Time (ms)\n";
+            csvContent += "ID,n,stim,ShouldRespond,Response,Response Time (ms),Elapsed Time (ms)\n";
             
             gameData.forEach(data => {
                 csvContent += `${participantId},${n},${data.trial},${data.shouldRespond},${data.response},${data.responseTime},${data.elapsedTime}\n`;
