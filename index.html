@@ -5,13 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>N-Back Test</title>
     <style>
+        /* Ensures the body and html elements take up the entire height */
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
         body {
             font-family: Arial, sans-serif;
             display: flex;
+            flex-direction: column; /* Makes footer alignment easier */
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
             background-color: #f0f0f0;
         }
         #welcome-screen, #game-container {
@@ -64,6 +68,16 @@
             text-align: left;
             margin-bottom: 20px;
         }
+
+        /* Style for the footer */
+        footer {
+            position: absolute; /* Positions footer relative to the body */
+            bottom: 10px; /* Aligns it to the bottom */
+            left: 50%; /* Moves it to the center horizontally */
+            transform: translateX(-50%); /* Centers it exactly */
+            text-align: center; /* Centers text inside the footer */
+            width: 100%; /* Ensures footer content is centered */
+        }
     </style>
 </head>
 <body>
@@ -74,7 +88,7 @@
             <ol>
                 <li>A red dot will appear in a 3x3 grid every 3 seconds.</li>
                 <li>Your task is to remember the position of the dot 'n' steps back.</li>
-                <li>Press the spacebar if the current dot position matches the one 'n' steps back.</li>
+                <li>Press the SPACEBAR if the current dot position matches the one 'n' steps back.</li>
                 <li>You'll receive feedback after each response.</li>
                 <li>The game will last for 2 minutes.</li>
                 <li>After the game, a CSV file with your results will be downloaded.</li>
@@ -88,6 +102,8 @@
             <option value="1">1-back</option>
             <option value="2" selected>2-back</option>
             <option value="3">3-back</option>
+            <option value="4">4-back</option>
+            <option value="5">5-back</option>
         </select>
         <br>
         <button id="start-test-btn">Start Test</button>
@@ -96,18 +112,22 @@
     <div id="game-container">
         <h1>N-Back Test</h1>
         <div id="grid"></div>
-        <div id="score">Score: 0</div>
-        <div id="timer">Time: 2:00</div>
+        <!-- <div id="score">Score: 0</div>
+        <div id="timer">Time: 2:00</div> -->
         <div id="message"></div>
         <button id="end-game-btn">End Game</button>
     </div>
+
+    <footer>
+        &copy; 2024 Aakash Yadav | <a href="https://nimrobotics.com">nimRobotics.com</a>
+    </footer>
 
     <script>
         const welcomeScreen = document.getElementById('welcome-screen');
         const gameContainer = document.getElementById('game-container');
         const grid = document.getElementById('grid');
-        const scoreElement = document.getElementById('score');
-        const timerElement = document.getElementById('timer');
+        // const scoreElement = document.getElementById('score');
+        // const timerElement = document.getElementById('timer');
         const messageElement = document.getElementById('message');
         const startTestButton = document.getElementById('start-test-btn');
         const endGameButton = document.getElementById('end-game-btn');
@@ -126,8 +146,14 @@
         let lastStimulusTime = 0;
         let gameData = [];
         let gameStartTime;
-        let matchProbability = 0.25; // 25% chance of n-back match
-        const gameDuration = 120000; // 2 minutes in milliseconds
+        const matchProbability = 0.60; // 50% chance of n-back match
+        const gameDuration = 300000; // 5 minutes in milliseconds
+        const persistenceTime = 900; // milliseconds
+        const interStimulusInterval = 1000; // milliseconds
+        let shouldRespond = false;
+        let participantResponse = false;
+        let responseTime= '';
+
 
         // Create the 3x3 grid
         for (let i = 0; i < 9; i++) {
@@ -174,7 +200,7 @@
             const remainingTime = Math.max(0, gameDuration - elapsedTime);
             const minutes = Math.floor(remainingTime / 60000);
             const seconds = Math.floor((remainingTime % 60000) / 1000);
-            timerElement.textContent = `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            // timerElement.textContent = `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
 
             if (remainingTime <= 0) {
                 endGame();
@@ -182,20 +208,22 @@
         }
 
         function checkMatch() {
-            const responseTime = Date.now() - lastStimulusTime;
+            // const responseTime = Date.now() - lastStimulusTime;
+            shouldRespond = currentIndex > n && sequence[currentIndex - 1] === sequence[currentIndex - 1 - n];
             const isCorrect = currentIndex > n && sequence[currentIndex - 1] === sequence[currentIndex - 1 - n];
             
-            if (isCorrect) {
-                score++;
-                updateScore();
-                messageElement.textContent = "Correct!";
-            } else {
-                messageElement.textContent = "Incorrect";
-            }
+            // if (isCorrect) {
+            //     score++;
+            //     updateScore();
+            //     messageElement.textContent = "Correct!";
+            // } else {
+            //     messageElement.textContent = "Incorrect";
+            // }
 
             gameData.push({
                 trial: currentIndex,
-                correct: isCorrect ? 1 : 0,
+                shouldRespond: shouldRespond ? 1 : 0,
+                response: participantResponse ? 1 : 0,
                 responseTime: responseTime,
                 elapsedTime: Date.now() - gameStartTime
             });
@@ -203,10 +231,16 @@
             setTimeout(() => {
                 messageElement.textContent = "";
             }, 1000);
+
+            participantResponse = false;
+            responseTime = '';
         }
 
         function nextTurn() {
             const nextCell = getRandomCell();
+            if (currentIndex >= n) {
+                checkMatch();
+            }
             sequence.push(nextCell);
             showDot(nextCell);
             currentIndex++;
@@ -217,11 +251,11 @@
             currentIndex = 0;
             score = 0;
             gameData = [];
-            updateScore();
+            // updateScore();
             isGameRunning = true;
             gameStartTime = Date.now();
 
-            intervalId = setInterval(nextTurn, 3000); // Show a new dot every 3 seconds
+            intervalId = setInterval(nextTurn, persistenceTime); // Show a new dot every persistenceTime seconds
             timerIntervalId = setInterval(updateTimer, 1000); // Update timer every second
         }
 
@@ -229,7 +263,7 @@
             clearInterval(intervalId);
             clearInterval(timerIntervalId);
             isGameRunning = false;
-            alert(`Game Over! Your score: ${score}\nParticipant ID: ${participantId}\nN-back level: ${n}`);
+            // alert(`Game Over! Your score: ${score}\nParticipant ID: ${participantId}\nN-back level: ${n}`);
             saveCSV();
             welcomeScreen.style.display = 'block';
             gameContainer.style.display = 'none';
@@ -237,10 +271,10 @@
 
         function saveCSV() {
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Participant ID,N-back Level,Trial,Correct,Response Time (ms),Elapsed Time (ms)\n";
+            csvContent += "Participant ID,N-back Level,Trial,ShouldRespond,Response,Response Time (ms),Elapsed Time (ms)\n";
             
             gameData.forEach(data => {
-                csvContent += `${participantId},${n},${data.trial},${data.correct},${data.responseTime},${data.elapsedTime}\n`;
+                csvContent += `${participantId},${n},${data.trial},${data.shouldRespond},${data.response},${data.responseTime},${data.elapsedTime}\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
@@ -269,7 +303,9 @@
         document.addEventListener('keydown', (event) => {
             if (event.code === 'Space' && isGameRunning) {
                 event.preventDefault();
-                checkMatch();
+                // checkMatch();
+                participantResponse = true;
+                responseTime = Date.now() - lastStimulusTime;
             }
         });
     </script>
