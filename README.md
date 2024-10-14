@@ -31,6 +31,14 @@ The N-Back test is a continuous performance task that is commonly used in cognit
 6. Press the SPACEBAR if the current dot position matches the one 'n' steps back.
 7. After completing the test, a CSV file with your results will be automatically downloaded.
 
+## Data Analysis
+
+Please refer to the Jupyter Notebook for data analysis and visualization:
+
+https://colab.research.google.com/drive/1vbi5tAcaq8m-vng3HAZbrirPaPQAHZnM?usp=sharing
+
+Karthikeyan, R., Smoot, M.R. & Mehta, R.K. Anodal tDCS augments and preserves working memory beyond time-on-task deficits. Sci Rep 11, 19134 (2021). https://doi.org/10.1038/s41598-021-98636-y
+
 ## Instructions
 
 1. A red dot will appear at a random position in the 3x3 grid.
