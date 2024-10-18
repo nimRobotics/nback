@@ -127,14 +127,12 @@
         const welcomeScreen = document.getElementById('welcome-screen');
         const gameContainer = document.getElementById('game-container');
         const grid = document.getElementById('grid');
-        // const scoreElement = document.getElementById('score');
-        // const timerElement = document.getElementById('timer');
         const messageElement = document.getElementById('message');
         const startTestButton = document.getElementById('start-test-btn');
         const endGameButton = document.getElementById('end-game-btn');
         const participantIdInput = document.getElementById('participant-id');
         const nSelect = document.getElementById('n-select');
-
+    
         let cells = [];
         let sequence = [];
         let currentIndex = 0;
@@ -153,9 +151,24 @@
         const interStimulusInterval = 1000; // milliseconds
         let shouldRespond = false;
         let participantResponse = false;
-        let responseTime= '';
-
-
+        let responseTime = '';
+    
+        // Function to send data to the server
+        function sendDataToServer(data) {
+            fetch('http://localhost:3000/receive-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(serverResponse => console.log('Server response:', serverResponse))
+            .catch((error) => {
+                console.error('Error sending data:', error);
+            });
+        }
+    
         // Create the 3x3 grid
         for (let i = 0; i < 9; i++) {
             const cell = document.createElement('div');
@@ -166,13 +179,11 @@
             grid.appendChild(cell);
             cells.push(dot);
         }
-
+    
         function getRandomCell() {
             if (currentIndex >= n && Math.random() < matchProbability) {
-                // matchProbability chance of n-back match
                 return sequence[currentIndex - n];
             } else {
-                // 1 - matchProbability chance of a new random position
                 let newCell;
                 do {
                     newCell = Math.floor(Math.random() * 9);
@@ -180,55 +191,26 @@
                 return newCell;
             }
         }
-
+    
         function showDot(cellIndex) {
-            // Clear any existing dots
             cells.forEach(dot => {
                 dot.style.transform = 'scale(0)';
             });
             
-            // Show the dot after the ISI
             setTimeout(() => {
                 cells[cellIndex].style.transform = 'scale(1)';
                 lastStimulusTime = Date.now();
                 
-                // Hide the dot after persistenceTime
                 setTimeout(() => {
                     cells[cellIndex].style.transform = 'scale(0)';
                 }, persistenceTime);
             }, interStimulusInterval);
         }
-
-
-        function updateScore() {
-            scoreElement.textContent = `Score: ${score}`;
-        }
-
-        function updateTimer() {
-            const elapsedTime = Date.now() - gameStartTime;
-            const remainingTime = Math.max(0, gameDuration - elapsedTime);
-            const minutes = Math.floor(remainingTime / 60000);
-            const seconds = Math.floor((remainingTime % 60000) / 1000);
-            // timerElement.textContent = `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-            if (remainingTime <= 0) {
-                endGame();
-            }
-        }
-
+    
         function checkMatch() {
-            // const responseTime = Date.now() - lastStimulusTime;
             shouldRespond = currentIndex > n && sequence[currentIndex - 1] === sequence[currentIndex - 1 - n];
             const isCorrect = currentIndex > n && sequence[currentIndex - 1] === sequence[currentIndex - 1 - n];
-            
-            // if (isCorrect) {
-            //     score++;
-            //     updateScore();
-            //     messageElement.textContent = "Correct!";
-            // } else {
-            //     messageElement.textContent = "Incorrect";
-            // }
-
+    
             gameData.push({
                 trial: currentIndex,
                 shouldRespond: shouldRespond ? 1 : 0,
@@ -236,15 +218,21 @@
                 responseTime: responseTime,
                 elapsedTime: Date.now() - gameStartTime
             });
-
-            setTimeout(() => {
-                messageElement.textContent = "";
-            }, 1000);
-
+    
+            // Send the trial data to the server
+            sendDataToServer({
+                participantID: participantId,
+                trial: currentIndex,
+                shouldRespond: shouldRespond ? 1 : 0,
+                response: participantResponse ? 1 : 0,
+                responseTime: responseTime,
+                elapsedTime: Date.now() - gameStartTime,
+            });
+    
             participantResponse = false;
             responseTime = '';
         }
-
+    
         function nextTurn() {
             const nextCell = getRandomCell();
             if (currentIndex >= n) {
@@ -254,25 +242,23 @@
             showDot(nextCell);
             currentIndex++;
         }
-
+    
         function startGame() {
             sequence = [];
             currentIndex = 0;
             score = 0;
             gameData = [];
-            // updateScore();
             isGameRunning = true;
             gameStartTime = Date.now();
-
-            intervalId = setInterval(nextTurn, persistenceTime + interStimulusInterval); // Show a new dot every persistenceTime seconds
-            timerIntervalId = setInterval(updateTimer, 1000); // Update timer every second
+    
+            intervalId = setInterval(nextTurn, persistenceTime + interStimulusInterval);
+            timerIntervalId = setInterval(updateTimer, 1000);
         }
-
+    
         function endGame() {
             clearInterval(intervalId);
             clearInterval(timerIntervalId);
             isGameRunning = false;
-            // alert(`Game Over! Your score: ${score}\nParticipant ID: ${participantId}\nN-back level: ${n}`);
             saveCSV();
             welcomeScreen.style.display = 'block';
             gameContainer.style.display = 'none';
@@ -294,7 +280,7 @@
             link.click();
             document.body.removeChild(link);
         }
-
+    
         startTestButton.addEventListener('click', () => {
             participantId = participantIdInput.value.trim();
             if (participantId === '') {
@@ -306,17 +292,17 @@
             gameContainer.style.display = 'block';
             startGame();
         });
-
+    
         endGameButton.addEventListener('click', endGame);
-
+    
         document.addEventListener('keydown', (event) => {
             if (event.code === 'Space' && isGameRunning) {
                 event.preventDefault();
-                // checkMatch();
                 participantResponse = true;
                 responseTime = Date.now() - lastStimulusTime;
             }
         });
     </script>
+    
 </body>
 </html>
