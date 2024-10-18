@@ -46,6 +46,18 @@ Karthikeyan, R., Smoot, M.R. & Mehta, R.K. Anodal tDCS augments and preserves wo
 3. Press the SPACEBAR if the current dot position matches the one 'n' steps back.
 4. After the game, a CSV file with your results will be downloaded.
 
+## Server setup for monitoring
+
+1. Install Node.js from https://nodejs.org/en/download/
+2. Verify installation by running `node -v` and `npm -v` in the terminal
+3. Set up a new directory for the server: `mkdir nback-server` and `cd nback-server`
+4. Initialize a new Node.js project: `npm init -y`
+5. Install Express.js: `npm install express`
+6. Add `server.js` file from this repository to the project directory
+7. Run the server: `node server.js`
+8. Port forwarding using vscode and set it to public
+10. Set the fetch URL in `index.html` to the public IP address of the server
+
 ## Contributing
 
 Contributions to improve the N-Back Test are welcome. Please feel free to submit a Pull Request.
