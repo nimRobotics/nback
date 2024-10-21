@@ -156,6 +156,7 @@
         // Function to send data to the server
         function sendDataToServer(data) {
             // fetch('http://localhost:3000/receive-data', {
+            // random server address: include your server URL here
             fetch('https://14ghn1n0-3000.use.devtunnels.ms/receive-data', {
                 method: 'POST',
                 headers: {
@@ -217,7 +218,8 @@
                 shouldRespond: shouldRespond ? 1 : 0,
                 response: participantResponse ? 1 : 0,
                 responseTime: responseTime,
-                elapsedTime: Date.now() - gameStartTime
+                // elapsedTime: Date.now() - gameStartTime
+                elapsedTime: Date.now()
             });
     
             // Send the trial data to the server
@@ -227,7 +229,8 @@
                 shouldRespond: shouldRespond ? 1 : 0,
                 response: participantResponse ? 1 : 0,
                 responseTime: responseTime,
-                elapsedTime: Date.now() - gameStartTime,
+                // elapsedTime: Date.now() - gameStartTime,
+                elapsedTime: Date.now()
             });
     
             participantResponse = false;
